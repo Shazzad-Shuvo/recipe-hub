@@ -1,11 +1,11 @@
 // styles
 import "./Create.css";
 
-// custom hooks
-import { useFetch } from "../../hooks/useFetch";
+// firebase
+import { projectFirestore } from "../../firebase/config";
 
 // react
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 // react router
 import { useNavigate } from "react-router-dom";
 
@@ -15,39 +15,40 @@ const Create = () => {
   const [cookingTime, setCookingTime] = useState("");
   const [newIngredient, setNewIngredient] = useState("");
   const [ingredients, setIngredients] = useState([]);
-  const ingredientInput = useRef('');
+  const ingredientInput = useRef("");
   const navigate = useNavigate();
 
-  const url = 'http://localhost:3000/recipes'
-  const {data, error, isPending, postData} = useFetch(url, 'POST');
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    postData({
+    const data = {
       title,
-      ingredients, 
+      ingredients,
       method,
-      cookingTime: cookingTime + ' minutes'
-    })
+      cookingTime: cookingTime + " minutes"
+    };
+
+    try{
+      await projectFirestore.collection('recipes').add(data);
+      navigate('/')
+    }
+    catch(err){
+      console.log(err);
+    }
+
   };
 
-  const handleAdd = (e) =>{
+  const handleAdd = (e) => {
     e.preventDefault();
     const ing = newIngredient.trim();
 
-    if(ing && !ingredients.includes(ing)){
-      setIngredients(prevIngredients => [...prevIngredients, ing]);
+    if (ing && !ingredients.includes(ing)) {
+      setIngredients((prevIngredients) => [...prevIngredients, ing]);
     }
-    setNewIngredient('');
+    setNewIngredient("");
     ingredientInput.current.focus();
-  }
+  };
 
-  // redirect the user when we get data response
-  useEffect(() =>{
-    if(data){
-      navigate('/');
-    }
-  }, [data])
+  
 
   return (
     <div className="create">
@@ -73,10 +74,17 @@ const Create = () => {
               value={newIngredient}
               ref={ingredientInput}
             />
-            <button onClick={handleAdd} className="btn">Add</button>
+            <button onClick={handleAdd} className="btn">
+              Add
+            </button>
           </div>
         </label>
-        <p>Current Ingredients: {ingredients.map((i) => <em key={i}>{i}, </em>)}</p>
+        <p>
+          Current Ingredients:{" "}
+          {ingredients.map((i) => (
+            <em key={i}>{i}, </em>
+          ))}
+        </p>
 
         <label>
           <span>Recipe Method: </span>
